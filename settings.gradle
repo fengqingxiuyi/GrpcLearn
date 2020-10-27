@@ -1,2 +1,4 @@
+include ':server'
+include ':proto'
 include ':client'
 rootProject.name = "gRPCLearn"

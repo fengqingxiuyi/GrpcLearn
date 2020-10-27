@@ -1,0 +1,76 @@
+/*
+参考文档：https://github.com/google/protobuf-gradle-plugin
+使用(To build it): $ ../gradlew clean build
+ */
+
+//Step1 buildscript节点必须在plugins节点之前
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.13'
+    }
+}
+
+plugins {
+    id 'java-library'
+    id 'kotlin'
+    //Step2 必须在java/kotlin/android plugin的后面
+    id 'com.google.protobuf' version '0.8.13'
+}
+
+//Step3
+sourceSets {
+    main {
+        proto { //标识proto文件所在文件夹，使Step4中定义的插件知道proto所在位置
+            srcDir 'src/main/java/com/example/proto'
+        }
+        java { //将自动生成类所在目录定义为源目录，使其他模块能够调用这些类
+            srcDirs 'build/generated/source/proto/main/grpc'
+            srcDirs 'build/generated/source/proto/main/grpckt'
+            srcDirs 'build/generated/source/proto/main/java'
+        }
+    }
+}
+
+//Step4
+protobuf {
+    protoc {
+        //proto文件编译器
+        artifact = "com.google.protobuf:protoc:3.13.0"
+    }
+    plugins {
+        //插件：用于将proto文件中的service转换为java类
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:1.33.0"
+        }
+        //插件：用于将proto文件中的service转换为kotlin类
+        grpckt {
+            artifact = "io.grpc:protoc-gen-grpc-kotlin:0.2.0:jdk7@jar"
+        }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            //使插件生效
+            grpc {}
+            grpckt {}
+        }
+    }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    //Step5
+    implementation 'com.google.protobuf:protobuf-java:3.13.0'
+    //下面三个依赖需要用api方式，因为client和server模块会用到
+    api 'io.grpc:grpc-protobuf:1.33.0'
+    api 'io.grpc:grpc-stub:1.33.0'
+    api 'io.grpc:grpc-kotlin-stub:0.2.0'
+    //compileOnly 'org.apache.tomcat:annotations-api:6.0.53' // necessary for Java 9+
+}
